@@ -33,10 +33,12 @@ local w, h = gpu.getResolution()
 -- Set font size
 gpu.setResolution(w / 6, h / 6)
 
--- Custom print function
-local function printScreen(text)
-    gpu.fill(1, 1, w, h, ' ') -- Clear screen
-    gpu.set(1, 1, text)       -- Reset cursor position and print
+-- Custom function to draw battery bar
+local function drawBatteryBar(energyPercent)
+    local barLength = w - 2
+    local filledBarLength = math.floor(barLength * energyPercent / 100)
+    gpu.fill(1, h / 2, filledBarLength, 1, '=')
+    gpu.fill(filledBarLength + 1, h / 2, barLength - filledBarLength, 1, ' ')
 end
 
 -- Update the energy status every 0.5 seconds
@@ -44,19 +46,25 @@ while true do
     -- Clear the screen for each update
     gpu.fill(1, 1, w, h, ' ')
 
-    -- Get and print the current energy in RF and EU
+    -- Get the current energy in RF and EU
     local currentEnergyRF = computer.energy()
     local currentEnergyEU = currentEnergyRF / 4 -- Convert to EU
-    printScreen("Current Energy: " .. currentEnergyRF .. " RF / " .. string.format("%.2f", currentEnergyEU) .. " EU")
 
-    -- Get and print the maximum energy in RF and EU
+    -- Get the maximum energy in RF and EU
     local maxEnergyRF = computer.maxEnergy()
     local maxEnergyEU = maxEnergyRF / 4 -- Convert to EU
-    printScreen("Max Energy: " .. maxEnergyRF .. " RF / " .. string.format("%.2f", maxEnergyEU) .. " EU")
 
-    -- Calculate and print the percentage of energy remaining
+    -- Calculate the percentage of energy remaining
     local energyPercent = (currentEnergyRF / maxEnergyRF) * 100
-    printScreen("Energy Remaining: " .. string.format("%.2f", energyPercent) .. "%")
+
+    -- Draw the battery bar
+    drawBatteryBar(energyPercent)
+
+    -- Print the current and max energy levels, and the energy rate
+    gpu.set(1, h / 3,
+        "Current Energy: " .. currentEnergyRF .. " RF / " .. string.format("%.2f", currentEnergyEU) .. " EU")
+    gpu.set(w, h / 3, "Max Energy: " .. maxEnergyRF .. " RF / " .. string.format("%.2f", maxEnergyEU) .. " EU")
+    gpu.set(w, h, "RF/T: " .. string.format("%.2f", currentEnergyRF / 20))
 
     -- Sleep for 0.5 seconds before the next update
     os.sleep(0.5)
