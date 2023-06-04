@@ -2,6 +2,12 @@
 local component = require("component")
 local computer = require("computer")
 local gpu = component.gpu
+local buffer = require("doubleBuffering")
+local event = require("event")
+
+-- Constants for design
+local barChar = "▄"
+local barColor = 0x00FF00
 
 -- Get a table of all screens
 local screens = component.list("screen")
@@ -14,7 +20,6 @@ end
 
 -- Ask the user to select a screen
 print("Please select a screen:")
-local originalScreen = gpu.getScreen()
 for i, address in ipairs(screenAddresses) do
     gpu.bind(address)
     local w, h = gpu.getResolution()
@@ -30,22 +35,17 @@ gpu.bind(screenAddresses[screenNumber])
 -- Get screen resolution
 local w, h = gpu.getResolution()
 
--- Set font size
-gpu.setResolution(w / 6, h / 6)
+-- Prepare the buffer
+buffer.setResolution(w, h)
+buffer.clear(0x000000)
 
--- Custom function to draw battery bar
-local function drawBatteryBar(energyPercent)
-    local barLength = w - 2
-    local filledBarLength = math.floor(barLength * energyPercent / 100)
-    gpu.fill(1, h / 2, filledBarLength, 1, '=')
-    gpu.fill(filledBarLength + 1, h / 2, barLength - filledBarLength, 1, ' ')
+local function drawStatusBar(x, y, length, percent, color)
+    local fillLength = math.floor(length * percent / 100)
+    buffer.square(x, y, fillLength, 1, color, 0xFFFFFF, "")
+    buffer.square(x + fillLength, y, length - fillLength, 1, 0x000000, 0xFFFFFF, "")
 end
 
--- Update the energy status every 0.5 seconds
-while true do
-    -- Clear the screen for each update
-    gpu.fill(1, 1, w, h, ' ')
-
+local function drawEnergyStatus()
     -- Get the current energy in RF and EU
     local currentEnergyRF = computer.energy()
     local currentEnergyEU = currentEnergyRF / 4 -- Convert to EU
@@ -57,15 +57,24 @@ while true do
     -- Calculate the percentage of energy remaining
     local energyPercent = (currentEnergyRF / maxEnergyRF) * 100
 
-    -- Draw the battery bar
-    drawBatteryBar(energyPercent)
+    buffer.clear(0x000000)
 
-    -- Print the current and max energy levels, and the energy rate
-    gpu.set(1, h / 3,
+    -- Print the current and max energy levels
+    buffer.text(2, 2, 0xFFFFFF,
         "Current Energy: " .. currentEnergyRF .. " RF / " .. string.format("%.2f", currentEnergyEU) .. " EU")
-    gpu.set(w, h / 3, "Max Energy: " .. maxEnergyRF .. " RF / " .. string.format("%.2f", maxEnergyEU) .. " EU")
-    gpu.set(w, h, "RF/T: " .. string.format("%.2f", currentEnergyRF / 20))
+    buffer.text(2, 3, 0xFFFFFF, "Max Energy: " .. maxEnergyRF .. " RF / " .. string.format("%.2f", maxEnergyEU) .. " EU")
 
-    -- Sleep for 0.5 seconds before the next update
+    -- Draw the battery bar
+    drawStatusBar(2, 5, w - 2, energyPercent, barColor)
+
+    -- Draw RF/T rate
+    buffer.text(w - 10, h, 0xFFFFFF, "RF/T: " .. string.format("%.2f", currentEnergyRF / 20))
+
+    buffer.draw()
+end
+
+-- Run the main loop
+while true do
+    drawEnergyStatus()
     os.sleep(0.5)
 end
