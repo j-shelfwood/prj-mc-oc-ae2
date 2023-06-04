@@ -1,9 +1,6 @@
 -- load the necessary libraries
 local component = require("component")
 
--- load the necessary libraries
-local component = require("component")
-
 -- get a reference to the ME interface
 local meInterfaceAddress = component.list("me_interface")()
 
