@@ -3,6 +3,7 @@ local component = require("component")
 local computer = require("computer")
 local term = require("term")
 local shell = require("shell")
+local gpu = component.gpu
 
 -- Get a table of all screens
 local screens = component.list("screen")
@@ -15,16 +16,25 @@ end
 
 -- Ask the user to select a screen
 print("Please select a screen:")
+local originalScreen = gpu.getScreen()
 for i, address in ipairs(screenAddresses) do
-    print(i .. ": " .. address)
+    gpu.bind(address)
+    local w, h = gpu.getResolution()
+    print(i .. ": " .. address .. " (" .. w .. "x" .. h .. ")")
 end
+gpu.bind(originalScreen) -- Reset the binding to the original screen
 print("Enter the number of the screen you want to use:")
 local screenNumber = tonumber(io.read())
 
 -- Get the screen address and create a proxy
 local screen = component.proxy(screenAddresses[screenNumber])
 
+-- Get primary GPU and bind it to the selected screen
+local gpu = component.gpu
+gpu.bind(screen.address)
+
 -- Set the output to the selected screen
+term.clear()
 term.redirect(screen)
 
 -- Update the energy status every 0.5 seconds
@@ -41,9 +51,9 @@ while true do
     local energyPercent = (currentEnergy / maxEnergy) * 100
     print("Energy Remaining: " .. energyPercent .. "%")
 
-    -- Clear the screen for the next update
-    term.clear()
-
     -- Sleep for 0.5 seconds before the next update
     os.sleep(0.5)
+
+    -- Clear the screen for the next update
+    term.clear()
 end
