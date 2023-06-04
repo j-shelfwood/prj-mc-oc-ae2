@@ -31,29 +31,38 @@ local screen = component.proxy(screenAddresses[screenNumber])
 
 -- Get primary GPU and bind it to the selected screen
 local gpu = component.gpu
-gpu.bind(screen.address)
+gpu.bind(screenAddresses[screenNumber])
 
--- Set the output to the selected screen
-term.clear()
-term.redirect(screen)
+-- Get screen resolution
+local w, h = gpu.getResolution()
+
+-- Initialize cursor position
+local cursorX, cursorY = 1, 1
+
+-- Custom print function
+local function printScreen(text)
+    if cursorY > h then
+        gpu.fill(1, 1, w, h, ' ') -- Clear screen
+        cursorX, cursorY = 1, 1   -- Reset cursor position
+    end
+    gpu.set(cursorX, cursorY, text)
+    cursorY = cursorY + 1 -- Move cursor to next line
+end
 
 -- Update the energy status every 0.5 seconds
 while true do
     -- Get and print the current energy
     local currentEnergy = computer.energy()
-    print("Current Energy: " .. currentEnergy)
+    printScreen("Current Energy: " .. currentEnergy)
 
     -- Get and print the maximum energy
     local maxEnergy = computer.maxEnergy()
-    print("Max Energy: " .. maxEnergy)
+    printScreen("Max Energy: " .. maxEnergy)
 
     -- Calculate and print the percentage of energy remaining
     local energyPercent = (currentEnergy / maxEnergy) * 100
-    print("Energy Remaining: " .. energyPercent .. "%")
+    printScreen("Energy Remaining: " .. energyPercent .. "%")
 
     -- Sleep for 0.5 seconds before the next update
     os.sleep(0.5)
-
-    -- Clear the screen for the next update
-    term.clear()
 end
