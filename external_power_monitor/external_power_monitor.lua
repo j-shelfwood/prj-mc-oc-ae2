@@ -1,7 +1,6 @@
 -- Load the required libraries
 local component = require("component")
 local computer = require("computer")
-local term = require("term")
 local gpu = component.gpu
 
 -- Get a table of all screens
@@ -34,19 +33,17 @@ local w, h = gpu.getResolution()
 -- Set font size
 gpu.setResolution(w / 6, h / 6)
 
--- Initialize cursor position
-local cursorX, cursorY = 1, 1
-
 -- Custom print function
 local function printScreen(text)
     gpu.fill(1, 1, w, h, ' ') -- Clear screen
-    cursorX, cursorY = 1, 1   -- Reset cursor position
-    gpu.set(cursorX, cursorY, text)
-    cursorY = cursorY + 1     -- Move cursor to next line
+    gpu.set(1, 1, text)       -- Reset cursor position and print
 end
 
 -- Update the energy status every 0.5 seconds
 while true do
+    -- Clear the screen for each update
+    gpu.fill(1, 1, w, h, ' ')
+
     -- Get and print the current energy in RF and EU
     local currentEnergyRF = computer.energy()
     local currentEnergyEU = currentEnergyRF / 4 -- Convert to EU
