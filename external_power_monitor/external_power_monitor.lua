@@ -39,12 +39,10 @@ local cursorX, cursorY = 1, 1
 
 -- Custom print function
 local function printScreen(text)
-    if cursorY > h then
-        gpu.fill(1, 1, w, h, ' ') -- Clear screen
-        cursorX, cursorY = 1, 1   -- Reset cursor position
-    end
+    gpu.fill(1, 1, w, h, ' ') -- Clear screen
+    cursorX, cursorY = 1, 1   -- Reset cursor position
     gpu.set(cursorX, cursorY, text)
-    cursorY = cursorY + 1 -- Move cursor to next line
+    cursorY = cursorY + 1     -- Move cursor to next line
 end
 
 -- Update the energy status every 0.5 seconds
